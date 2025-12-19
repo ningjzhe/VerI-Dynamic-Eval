@@ -1,0 +1,17 @@
+{
+    "data_path": "/root/autodl-tmp/data/processed/processed_data/medqa_processed/UStest.parquet",
+    "num_samples": 1,
+    "api_type": "openai",
+    "api_key": "sk-969e08a75482487b8ba67d1c384efb15",
+    "model_name": "qwen-plus",
+    "base_model_api_type": "local",
+    "base_model_path": "/root/autodl-tmp/models/Qwen/Qwen2.5-7B-Instruct", 
+    "base_model_device": "cuda",
+    "max_queries_per_session": 5,
+    "results_file": "/root/autodl-tmp/results/Dynamic_query/dynamic_query_results.csv",
+    "report_file": "/root/autodl-tmp/results/Dynamic_query/dynamic_query_report.md",
+    "case_study_dir": "/root/autodl-tmp/results/Dynamic_query/case_studies",
+    "query_distribution_plot": "/root/autodl-tmp/results/Dynamic_query/query_distribution.png",
+    "accuracy_comparison_plot": "/root/autodl-tmp/results/Dynamic_query/accuracy_comparison.png",
+    "num_case_studies": 3
+}
