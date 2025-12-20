@@ -77,7 +77,7 @@ class DynamicQueryProcessor:
 为了回答问题，我需要获取以下信息：
 "{query_content}"
 
-请提供相关信息。"""
+请你简要的提供相关信息。"""
         
         return formatted_query
     
@@ -129,29 +129,30 @@ class DynamicQueryProcessor:
             try:
                 strong_model_response = self.strong_model_api.call(formatted_query)
                 query_record.response = strong_model_response
-                print(f"Strong model response: {strong_model_response}")
                 query_record.is_successful = True
                 
                 # 将强模型的响应附加到当前响应后面，供模型继续推理
                 current_response = f"{cleaned_current_response}\n\n强模型反馈: {strong_model_response}"
                 follow_up_prompt = f"""
-                【严格格式要求】
-                1. **输出内容**：仅返回选项字母（A/B/C/D/E）或<query>标签内容，禁止任何前缀、后缀或解释。
-        
-                2. **格式示例**：
-                    - 正确输出：A
-                    - 正确输出：<query>需要查询的内容</query>
-                    - 错误输出：Assistant: A（需删除前缀）
-
-                3. **原始问题与选项**：
-                    - 原始问题: {original_question}
-                    - 选项: A.选项A B.选项B ... E.选项E
-                    - 信息： {current_response}
-                4. **回答要求**：
-                    - 如果有足够信息回答问题，直接输出正确选项的字母（A/B/C/D/E）。
-                    - 如果信息不足，请生成一个新的查询，格式为：<query>需要查询的内容</query>，其中“需要查询的内容”应具体
-                请严格执行上述要求，确保输出符合格式约束。"""
-                current_response = current_response+self.base_model_api.call(follow_up_prompt)
+现在你是一个医疗领域的专家。请按照下面的方式输出：
+当你确定答案时，请直接给出答案。按照'答案是X'的格式回答，其中X是选项字母。
+示例：当问题是‘卧位腰椎穿刺，脑脊液压力正常值是（　　）。’, 选项是‘ "A": "190～220mmH2O（1.86～2.16kPa）", "B": "80～180mmH2O（0.78～1.76kPa）", "C": "50～70mmH2O（0.49～0.69kPa）", "D": "230～250mmH2O（2.25～2.45kPa）", "E": "260～280mmH2O（2.55～2.74kPa）"’
+输出‘答案是B’
+当你不确定时，你可以选择进行查询以获取更多信息。查询的格式是：<query>你的查询内容</query>。
+请注意，查询应当简洁并且具体，直接相关于问题的答案。
+示例：当问题是‘卧位腰椎穿刺，脑脊液压力正常值是（　　）。’, 选项是‘ "A": "190～220mmH2O（1.86～2.16kPa）", "B": "80～180mmH2O（0.78～1.76kPa）", "C": "50～70mmH2O（0.49～0.69kPa）", "D": "230～250mmH2O（2.25～2.45kPa）", "E": "260～280mmH2O（2.55～2.74kPa）"’
+输出‘为了回答这个问题, 我需要询问在卧位腰椎穿刺时脑脊液压力的正常范围。 <query> 卧位腰椎穿刺脑脊液压力正常值范围</query>’
+错误的提问示例：<query> 患者压力正常值范围</query>（没有具体说明是哪个压力的正常值范围）
+正确的提问示例：<query> 卧位腰椎穿刺脑脊液压力正常值范围</query>
+回答以下问题：
+{original_question}
+已经掌握的的信息：
+{current_response}
+请按照上面的说明输出。请基于你已经掌握的信息回答问题。
+如果你对答案感到不确定，你可以向知识更丰富的专家请求帮助，请按照<query>你需要查询的内容</query>的格式输出你需要查询的内容.
+如果已经确定答案，确保你输出的内容是以'答案是X'的格式。
+"""
+                current_response = current_response+'\n\n'+self.base_model_api.call(follow_up_prompt)
                 print(f"Response after strong model feedback: {current_response}")
             except Exception as e:
                 print(f"Error calling strong model: {e}")
@@ -299,3 +300,4 @@ Total Queries: {stats['total_queries']}
 """
     
     return report
+

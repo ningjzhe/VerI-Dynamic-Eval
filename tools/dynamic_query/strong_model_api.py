@@ -1,6 +1,6 @@
 """
 Strong Model API Interface for Dynamic Query
-This module provides interfaces to communicate with stronger models like DeepSeek-V3.2, Qwen3-235B-A22B, etc.
+This module provides interfaces to communicate with stronger models 
 """
 
 import requests
@@ -10,6 +10,29 @@ from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+from transformers import StoppingCriteria, StoppingCriteriaList
+class MultiStopCriteria(StoppingCriteria):
+    def __init__(self, stop_sequences, tokenizer, device):
+        super().__init__()
+        # 将字符串序列转换为token ID列表
+        self.stop_sequences = [
+            tokenizer.encode(seq, add_special_tokens=False) 
+            for seq in stop_sequences
+        ]
+        self.device = device
+
+    def __call__(self, input_ids, scores, **kwargs):
+        # 获取当前生成的token序列
+        current_tokens = input_ids[0].tolist()
+        
+        # 检查每个停止序列
+        for stop_seq in self.stop_sequences:
+            # 确保有足够长度的token可供匹配
+            if len(current_tokens) >= len(stop_seq):
+                # 检查末尾是否匹配
+                if current_tokens[-len(stop_seq):] == stop_seq:
+                    return True
+        return False
 
 class StrongModelAPI(ABC):
     """强模型API抽象基类"""
@@ -46,8 +69,6 @@ class LocalModelAPI(StrongModelAPI):
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForCausalLM.from_pretrained(model_path).to(device)
         self.model.eval()
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
         print(f"Model loaded successfully on {device}")
         
     def call(self, query: str, **kwargs) -> str:
@@ -65,15 +86,28 @@ class LocalModelAPI(StrongModelAPI):
             # 编码输入
             inputs = self.tokenizer(query, return_tensors="pt").to(self.device)
             # 生成响应
+            eos_token_id = self.tokenizer.eos_token_id
+            attention_mask = inputs.attention_mask
+            print("Generating response from local model...")
+            stopping_criteria = StoppingCriteriaList([
+                MultiStopCriteria(
+                    stop_sequences=['答案是A', '答案是B', '答案是C', '答案是D', '答案是E'],  # 多个停止序列
+                    tokenizer=self.tokenizer,
+                    device=self.device
+                )
+            ])
+
             with torch.no_grad():
                 outputs = self.model.generate(
-                    inputs,
-                    max_new_tokens=kwargs.get("max_tokens", 524),
-                    temperature=kwargs.get("temperature", 0.1),
-                    top_p=kwargs.get("top_p", 0.9),
-                    do_sample=False,
+                    inputs.input_ids,
+                    max_new_tokens=kwargs.get("max_tokens", 100),
+                    do_sample=True,
+                    eos_token_id=eos_token_id,  # 关键参数
+                    top_p=0.9,
+                    temperature=0.1,
+                    attention_mask=attention_mask,
+                    stopping_criteria=stopping_criteria
                 )
-            
              # 解码输出
             response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
             
@@ -126,7 +160,7 @@ class OpenAIAPI(StrongModelAPI):
                     "content": query
                 }
             ],
-            "max_tokens": kwargs.get("max_tokens", 200),
+            "max_tokens": kwargs.get("max_tokens", 300),
             "temperature": kwargs.get("temperature", 0.3),
             "top_p": kwargs.get("top_p", 0.9)
         }

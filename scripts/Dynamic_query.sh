@@ -1,0 +1,1 @@
+python /VerI-Dynamic-Eval/tools/dynamic_query/main.py --config /VerI-Dynamic-Eval/tools/dynamic_query/config_template.json

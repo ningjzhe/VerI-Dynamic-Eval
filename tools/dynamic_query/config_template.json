@@ -1,8 +1,8 @@
 {
     "data_path": "/root/autodl-tmp/data/processed/processed_data/medqa_processed/UStest.parquet",
-    "num_samples": 1,
+    "num_samples": 100,
     "api_type": "openai",
-    "api_key": "sk-969e08a75482487b8ba67d1c384efb15",
+    "api_key": "YOUR_OPENAI_API_KEY",
     "model_name": "qwen-plus",
     "base_model_api_type": "local",
     "base_model_path": "/root/autodl-tmp/models/Qwen/Qwen2.5-7B-Instruct", 
