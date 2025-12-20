@@ -1,4 +1,4 @@
-# VerI-Dynamic-Eval
+# Dynamic-Eval
 
 一个用于研究“动态查询”（Dynamic Query）在问答（MedQA / PathVQA）中的评估与实验框架，包含数据预处理、答案生成与基于“强模型 + 基础模型”的动态查询流水线与分析工具。
 
